@@ -16,6 +16,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
+        
         // Set the view's delegate
         sceneView.delegate = self
         
@@ -33,13 +35,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 //        node.geometry = sphere
 //        sceneView.scene.rootNode.addChildNode(node)
         
-        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")!
-        if let diceNode = diceScene.rootNode.childNode(withName: "Dice", recursively: true) {
-            diceNode.position = SCNVector3(x: 0.0, y: 0.0, z: -0.1)
-            sceneView.scene.rootNode.addChildNode(diceNode)
-        }
-  
-        sceneView.autoenablesDefaultLighting = true
+//        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")!
+//        if let diceNode = diceScene.rootNode.childNode(withName: "Dice", recursively: true) {
+//            diceNode.position = SCNVector3(x: 0.0, y: 0.0, z: -0.1)
+//            sceneView.scene.rootNode.addChildNode(diceNode)
+//        }
+//
+//        sceneView.autoenablesDefaultLighting = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -47,6 +49,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         // Create a session configuration
         let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = .horizontal
 
         print("Session is supported = \(ARConfiguration.isSupported)")
         print("World Tracking is supported = \(ARWorldTrackingConfiguration.isSupported)")
@@ -60,5 +63,23 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         // Pause the view's session
         sceneView.session.pause()
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        if anchor is ARPlaneAnchor {
+            let plantAnchor = anchor as! ARPlaneAnchor
+            let plane = SCNPlane(width: CGFloat(plantAnchor.extent.x), height: CGFloat(plantAnchor.extent.z))
+            let planeNode = SCNNode()
+            planeNode.position = SCNVector3(x: plantAnchor.center.x, y: 0.0, z: plantAnchor.center.z)
+            planeNode.transform = SCNMatrix4MakeRotation(-Float.pi * 0.5, 1, 0, 0)
+            let gridMaterial = SCNMaterial()
+            gridMaterial.diffuse.contents = UIImage(named: "art.scnassets/grid.png")
+            plane.materials = [gridMaterial]
+            planeNode.geometry = plane
+            node.addChildNode(planeNode)
+            print("Plane detected")
+        } else {
+            return
+        }
     }
 }

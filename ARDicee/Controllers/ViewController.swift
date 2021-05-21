@@ -11,6 +11,8 @@ import ARKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     
+    var diceArray = [SCNNode]()
+    
     @IBOutlet var sceneView: ARSCNView!
     
     override func viewDidLoad() {
@@ -62,8 +64,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let touch = touches.first {
             let touchLocation = touch.location(in: sceneView)
-//            ARSCNView raycastQueryFromPoint:allowingTarget:alignment
-//           let results = sceneView.raycastQuery(from: touchLocation, allowing: .existingPlaneInfinite, alignment: .horizontal)
+            //            ARSCNView raycastQueryFromPoint:allowingTarget:alignment
+            //           let results = sceneView.raycastQuery(from: touchLocation, allowing: .existingPlaneInfinite, alignment: .horizontal)
             let results = sceneView.hitTest(touchLocation, types: .existingPlaneUsingExtent)
             if let hitResult = results.first {
                 // Create a new scene
@@ -74,18 +76,48 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                         y: hitResult.worldTransform.columns.3.y + diceNode.boundingSphere.radius,
                         z: hitResult.worldTransform.columns.3.z
                     )
-                    sceneView.scene.rootNode.addChildNode(diceNode)
-                    let randomX = Float(arc4random_uniform(4) + 1) * (Float.pi * 0.5)
-                    let randomZ = Float(arc4random_uniform(4) + 1) * (Float.pi * 0.5)
-                    diceNode.runAction(SCNAction.rotateBy(
-                                        x: CGFloat(randomX * 10),
-                                        y: 0.0,
-                                        z: CGFloat(randomZ * 10),
-                        duration: 0.5
-                    ))
+                    
+                    diceArray.append(diceNode)
+                    roll(diceNode)
                 }
             }
         }
+    }
+    
+    func rollAll() {
+        if !diceArray.isEmpty {
+            for dice in diceArray {
+                roll(dice)
+            }
+        }
+    }
+    
+    func roll(_ dice: SCNNode) {
+        sceneView.scene.rootNode.addChildNode(dice)
+        let randomX = Float(arc4random_uniform(4) + 1) * (Float.pi * 0.5)
+        let randomZ = Float(arc4random_uniform(4) + 1) * (Float.pi * 0.5)
+        dice.runAction(SCNAction.rotateBy(
+            x: CGFloat(randomX * 10),
+            y: 0.0,
+            z: CGFloat(randomZ * 10),
+            duration: 0.5
+        ))
+    }
+    
+    @IBAction func removeAllDice(_ sender: UIBarButtonItem) {
+        if !diceArray.isEmpty {
+            for dice in diceArray {
+                dice.removeFromParentNode()
+            }
+        }
+    }
+    
+    @IBAction func rollAgain(_ sender: UIBarButtonItem) {
+        rollAll()
+    }
+    
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        rollAll()
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
